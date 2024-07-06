@@ -38,11 +38,17 @@ def send_email():
 
     SMTP_USER = data.get('SMTP_USER')
     SMTP_PASSWORD = data.get('SMTP_PASSWORD')
-    MailReceive = data.get('MailReceive1')
+    MailReceive1 = data.get('MailReceive1')
+    MailReceive2 = data.get('MailReceive2')
+    MailReceive3 = data.get('MailReceive3')
+    MailReceive4 = data.get('MailReceive4')
+
+    # 수신자 리스트 작성
+    recipients = [r for r in [MailReceive1, MailReceive2, MailReceive3, MailReceive4] if r]
 
     msg = MIMEMultipart()
     msg['From'] = SMTP_USER
-    msg['To'] = MailReceive
+    msg['To'] = ', '.join(recipients)
     msg['Subject'] = MailTitle
 
     # HTML 본문을 파싱하여 base64 이미지를 찾아서 첨부
@@ -72,7 +78,7 @@ def send_email():
     try:
         server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
         server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail(SMTP_USER, MailReceive, msg.as_string())
+        server.sendmail(SMTP_USER, recipients, msg.as_string())
         server.quit()
 
         return jsonify({'status': 'success', 'message': 'Email sent successfully'})
