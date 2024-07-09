@@ -32,6 +32,73 @@
     <!-- Template Main CSS File -->
     <link href="static/css/style.css" rel="stylesheet">
     <script>
+
+        function addEmailsToTable(emails) {
+            const table = document.getElementById('EmailReceive');
+            const tbody = document.createElement('tbody');
+
+            emails.forEach(email => {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.textContent = email;
+                row.appendChild(cell);
+                tbody.appendChild(row);
+            });
+
+            // Clear existing rows (if any) before adding new ones
+            if (table.tBodies.length > 0) {
+                table.removeChild(table.tBodies[0]);
+            }
+            table.appendChild(tbody);
+        }
+
+        function submitForm() {
+            const form = document.getElementById('uploadForm');
+            const formFile = document.getElementById('formFile').files[0];
+
+            if (!formFile) {
+                alert("파일을 선택해 주세요.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', formFile);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Emails:', data.emails);
+                        addEmailsToTable(data.emails);
+                    } else {
+                        alert(`Error: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while uploading the file');
+                });
+        }
+
+        function downloadSample() {
+            window.location.href = 'static/샘플엑셀.xlsx';
+        }
+
+
+        function getEmailsFromTable() {
+            const table = document.getElementById('EmailReceive');
+            const emails = [];
+            for (let row of table.getElementsByTagName('tr')) {
+                if (row.cells.length > 0) {
+                    emails.push(row.cells[0].textContent.trim());
+                }
+            }
+            return emails;
+        }
+
         $(document).ready(function () {
 
             var MailEditor = new Quill(".quill-editor-full", {
@@ -86,18 +153,40 @@
             });
             $('#MailSend').on('click', function (e) {
                 var formData = {
-                    MailReceive: $('#MailReceive').val(),
                     MailTitle: $('#MailTitle').val(),
                     MailContent: MailEditor.root.innerHTML,
 
+                    MailReceive: getEmailsFromTable(),
 
-                    MailReceive1: $('#MailReceive1').val(),
-                    MailReceive2: $('#MailReceive2').val(),
-                    MailReceive3: $('#MailReceive3').val(),
-                    MailReceive4: $('#MailReceive4').val(),
+                    SMTP_USER : $('#SMTP_USER').val(),
+                    SMTP_PASSWORD : $('#SMTP_PASSWORD').val(),
 
-                    SMTP_USER: $('#SMTP_USER').val(),
-                    SMTP_PASSWORD: $('#SMTP_PASSWORD').val()
+                    SMTP_USER1 : $('#SMTP_USER1').val(),
+                    SMTP_PASSWORD1 : $('#SMTP_PASSWORD1').val(),
+
+                    SMTP_USER2 : $('#SMTP_USER2').val(),
+                    SMTP_PASSWORD2 : $('#SMTP_PASSWORD2').val(),
+
+                    SMTP_USER3 : $('#SMTP_USER3').val(),
+                    SMTP_PASSWORD3 : $('#SMTP_PASSWORD3').val(),
+
+                    SMTP_USER4 : $('#SMTP_USER4').val(),
+                    SMTP_PASSWORD4 : $('#SMTP_PASSWORD4').val(),
+
+                    SMTP_USER5 : $('#SMTP_USER5').val(),
+                    SMTP_PASSWORD5 : $('#SMTP_PASSWORD5').val(),
+
+                    SMTP_USER6 : $('#SMTP_USER6').val(),
+                    SMTP_PASSWORD6 : $('#SMTP_PASSWORD6').val(),
+
+                    SMTP_USER7 : $('#SMTP_USER7').val(),
+                    SMTP_PASSWORD7 : $('#SMTP_PASSWORD7').val(),
+
+                    SMTP_USER8 : $('#SMTP_USER8').val(),
+                    SMTP_PASSWORD8 : $('#SMTP_PASSWORD8').val(),
+
+                    SMTP_USER9 : $('#SMTP_USER9').val(),
+                    SMTP_PASSWORD9 : $('#SMTP_PASSWORD9').val()
                 };
 
                 $.ajax({
@@ -243,30 +332,197 @@
                                 </div>
                             </div>
                         </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER1"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD1"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER2"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD2"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER3"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD3"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER4"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD4"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER5"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD5"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER6"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD6"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER7"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD7"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER8"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD8"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_USER9"
+                                           placeholder="SMTP 계정 ID">
+                                    <label for="floatingEmail">SMTP 계정 ID</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="SMTP_PASSWORD9"
+                                           placeholder="SMTP 계정 PW">
+                                    <label for="floatingEmail">SMTP 계정 PW</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
                         <h5 class="card-title">받는 사람</h5>
 
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">@</span>
-                            <input type="text" class="form-control" placeholder="받을 사람 메일 1"
-                                   aria-describedby="basic-addon1" id="MailReceive1">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <form id="uploadForm" enctype="multipart/form-data">
+                                    <input class="form-control" type="file" id="formFile" onchange="submitForm()">
+                                </form>
+                            </div>
+                            <div class="col-lg-4">
+                                <button type="button" class="btn btn-info" style="color: white;"
+                                        onclick="downloadSample()">샘플 엑셀 다운로드
+                                </button>
+                            </div>
                         </div>
-
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">@</span>
-                            <input type="text" class="form-control" placeholder="받을 사람 메일 2"
-                                   aria-describedby="basic-addon1" id="MailReceive2">
-                        </div>
-
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">@</span>
-                            <input type="text" class="form-control" placeholder="받을 사람 메일 3"
-                                   aria-describedby="basic-addon1" id="MailReceive1">
-                        </div>
-
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">@</span>
-                            <input type="text" class="form-control" placeholder="받을 사람 메일 4"
-                                   aria-describedby="basic-addon1" id="MailReceive4">
+                        <br>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <table class="table datatable" id="EmailReceive">
+                                    <thead>
+                                    <tr>
+                                        <td>받는 메일 리스트</td>
+                                    </tr>
+                                    </thead>
+                                </table>
+                            </div>
                         </div>
 
                     </div>

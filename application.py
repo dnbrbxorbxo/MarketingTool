@@ -1,6 +1,8 @@
 import base64
 import re
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+
+import pandas as pd
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 import os
 import smtplib
 from flask import Flask, render_template, request, jsonify
@@ -29,26 +31,61 @@ def home():
 def main():
     return render_template('main.html')
 
+@app.route('/download_sample')
+def download_sample():
+    return send_from_directory(directory='static', filename='샘플엑셀.xlsx', as_attachment=True)
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'message': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'status': 'error', 'message': 'No selected file'}), 400
+    if file and file.filename.endswith('.xlsx'):
+        try:
+            # Read the Excel file
+            df = pd.read_excel(file)
+
+            if 'Emails' not in df.columns:
+                return jsonify({'status': 'error', 'message': 'No Emails column in the file'}), 400
+
+            # Extract emails
+            emails = df['Emails'].dropna().tolist()
+            return jsonify({'status': 'success', 'emails': emails})
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+    return jsonify({'status': 'error', 'message': 'Invalid file format'}), 400
+
 
 @app.route('/send_email', methods=['POST'])
 def send_email():
     data = request.json
     MailTitle = data.get('MailTitle')
     MailContent = data.get('MailContent')
+    email_list = data.get('MailReceive')
 
-    SMTP_USER = data.get('SMTP_USER')
-    SMTP_PASSWORD = data.get('SMTP_PASSWORD')
-    MailReceive1 = data.get('MailReceive1')
-    MailReceive2 = data.get('MailReceive2')
-    MailReceive3 = data.get('MailReceive3')
-    MailReceive4 = data.get('MailReceive4')
+    smtp_accounts = [
+        (data.get('SMTP_USER'), data.get('SMTP_PASSWORD')),
+        (data.get('SMTP_USER1'), data.get('SMTP_PASSWORD1')),
+        (data.get('SMTP_USER2'), data.get('SMTP_PASSWORD2')),
+        (data.get('SMTP_USER3'), data.get('SMTP_PASSWORD3')),
+        (data.get('SMTP_USER4'), data.get('SMTP_PASSWORD4')),
+        (data.get('SMTP_USER5'), data.get('SMTP_PASSWORD5')),
+        (data.get('SMTP_USER6'), data.get('SMTP_PASSWORD6')),
+        (data.get('SMTP_USER7'), data.get('SMTP_PASSWORD7')),
+        (data.get('SMTP_USER8'), data.get('SMTP_PASSWORD8')),
+        (data.get('SMTP_USER9'), data.get('SMTP_PASSWORD9')),
+    ]
 
-    # 수신자 리스트 작성
-    recipients = [r for r in [MailReceive1, MailReceive2, MailReceive3, MailReceive4] if r]
+    # 수신자를 100명씩 나눔
+    def chunk_recipients(lst, n):
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
+    recipient_chunks = list(chunk_recipients(email_list, 100))
 
     msg = MIMEMultipart()
-    msg['From'] = SMTP_USER
-    msg['To'] = ', '.join(recipients)
     msg['Subject'] = MailTitle
 
     # HTML 본문을 파싱하여 base64 이미지를 찾아서 첨부
@@ -75,17 +112,46 @@ def send_email():
     cleaned_html = str(soup)
     msg.attach(MIMEText(cleaned_html, 'html'))
 
-    try:
-        server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail(SMTP_USER, recipients, msg.as_string())
-        server.quit()
+    errors = []
+    account_index = 0
+    email_count = 0
 
-        return jsonify({'status': 'success', 'message': 'Email sent successfully'})
+    for chunk in recipient_chunks:
+        sent = False
+        retries = 0
 
-    except Exception as e:
-        logging.error(f"Error sending email: {e}")
-        return jsonify({'status': 'error', 'message': str(e)})
+        while not sent and retries < len(smtp_accounts):
+            smtp_user, smtp_password = smtp_accounts[account_index]
+            if smtp_user and smtp_password:
+                try:
+                    msg['From'] = smtp_user
+                    msg['To'] = ', '.join(chunk)
+
+                    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+                    server.login(smtp_user, smtp_password)
+                    server.sendmail(smtp_user, chunk, msg.as_string())
+                    server.quit()
+                    sent = True
+                    email_count += len(chunk)
+
+                    if email_count >= 30:
+                        account_index = (account_index + 1) % len(smtp_accounts)
+                        email_count = 0
+
+                except Exception as e:
+                    error_message = f"계정 {account_index + 1}로 이메일 전송 중 오류 발생: {e}"
+                    logging.error(error_message)
+                    errors.append(error_message)
+                    account_index = (account_index + 1) % len(smtp_accounts)
+                    retries += 1
+
+        if not sent:
+            errors.append(f"수신자 청크에 이메일 전송 실패: {chunk}")
+
+    if errors:
+        return jsonify({'status': 'error', 'message': errors}), 500
+    else:
+        return jsonify({'status': 'success', 'message': '이메일이 성공적으로 전송되었습니다.'})
 
 
 if __name__ == '__main__':
