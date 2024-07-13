@@ -51,7 +51,7 @@ def upload_file():
                 return jsonify({'status': 'error', 'message': 'No Emails column in the file'}), 400
 
             # Extract emails
-            emails = df['Emails'].dropna().tolist()
+            emails = df['Emails'].dropna().unique().tolist()
             return jsonify({'status': 'success', 'emails': emails})
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -66,7 +66,7 @@ def send_email():
     email_list = data.get('MailReceive')
 
     smtp_accounts = [
-        (data.get('SMTP_USER'), data.get('SMTP_PASSWORD')),
+        (data.get('SMTP_USER0'), data.get('SMTP_PASSWORD0')),
         (data.get('SMTP_USER1'), data.get('SMTP_PASSWORD1')),
         (data.get('SMTP_USER2'), data.get('SMTP_PASSWORD2')),
         (data.get('SMTP_USER3'), data.get('SMTP_PASSWORD3')),
@@ -78,12 +78,8 @@ def send_email():
         (data.get('SMTP_USER9'), data.get('SMTP_PASSWORD9')),
     ]
 
-    # 수신자를 100명씩 나눔
-    def chunk_recipients(lst, n):
-        for i in range(0, len(lst), n):
-            yield lst[i:i + n]
-
-    recipient_chunks = list(chunk_recipients(email_list, 100))
+    # 수신자를 최대 100명까지 가져오기
+    recipient_list = email_list[:100]
 
     msg = MIMEMultipart()
     msg['Subject'] = MailTitle
@@ -113,43 +109,35 @@ def send_email():
     msg.attach(MIMEText(cleaned_html, 'html'))
 
     errors = []
+    sent = False
+    retries = 0
     account_index = 0
-    email_count = 0
 
-    for chunk in recipient_chunks:
-        sent = False
-        retries = 0
+    while not sent and retries < len(smtp_accounts):
+        smtp_user, smtp_password = smtp_accounts[account_index]
+        if smtp_user and smtp_password:
+            try:
+                msg['From'] = smtp_user
+                msg['To'] = ', '.join(recipient_list)
 
-        while not sent and retries < len(smtp_accounts):
-            smtp_user, smtp_password = smtp_accounts[account_index]
-            if smtp_user and smtp_password:
-                try:
-                    msg['From'] = smtp_user
-                    msg['To'] = ', '.join(chunk)
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, recipient_list, msg.as_string())
+                server.quit()
+                sent = True
 
-                    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-                    server.login(smtp_user, smtp_password)
-                    server.sendmail(smtp_user, chunk, msg.as_string())
-                    server.quit()
-                    sent = True
-                    email_count += len(chunk)
+            except Exception as e:
+                error_message = f"계정 {account_index + 1}로 이메일 전송 중 오류 발생: {e}"
+                logging.error(error_message)
+                errors.append(error_message)
+                account_index = (account_index + 1) % len(smtp_accounts)
+                retries += 1
 
-                    if email_count >= 30:
-                        account_index = (account_index + 1) % len(smtp_accounts)
-                        email_count = 0
-
-                except Exception as e:
-                    error_message = f"계정 {account_index + 1}로 이메일 전송 중 오류 발생: {e}"
-                    logging.error(error_message)
-                    errors.append(error_message)
-                    account_index = (account_index + 1) % len(smtp_accounts)
-                    retries += 1
-
-        if not sent:
-            errors.append(f"수신자 청크에 이메일 전송 실패: {chunk}")
+    if not sent:
+        errors.append("이메일 전송에 실패했습니다.")
 
     if errors:
-        return jsonify({'status': 'error', 'message': errors}), 500
+        return jsonify({'status': 'error', 'message': error_message}), 500
     else:
         return jsonify({'status': 'success', 'message': '이메일이 성공적으로 전송되었습니다.'})
 
