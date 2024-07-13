@@ -81,33 +81,6 @@ def send_email():
     # 수신자를 최대 100명까지 가져오기
     recipient_list = email_list[:100]
 
-    msg = MIMEMultipart()
-    msg['Subject'] = MailTitle
-
-    # HTML 본문을 파싱하여 base64 이미지를 찾아서 첨부
-    soup = BeautifulSoup(MailContent, 'html.parser')
-    cid_count = 0
-
-    for img in soup.find_all('img'):
-        if 'src' in img.attrs and img.attrs['src'].startswith('data:image'):
-            cid_count += 1
-            img_type = img.attrs['src'].split(';')[0].split('/')[1]
-            img_data = re.sub('^data:image/.+;base64,', '', img.attrs['src'])
-            img_data = base64.b64decode(img_data)
-            image_name = f'image{cid_count}.{img_type}'
-
-            # 이미지 MIME 객체 생성 및 첨부
-            mime_img = MIMEImage(img_data, _subtype=img_type)
-            mime_img.add_header('Content-Disposition', 'attachment', filename=image_name)
-            mime_img.add_header('Content-ID', f'<{image_name}>')
-            msg.attach(mime_img)
-
-            # HTML 본문 내 이미지 src를 cid로 변경
-            img.attrs['src'] = f'cid:{image_name}'
-
-    cleaned_html = str(soup)
-    msg.attach(MIMEText(cleaned_html, 'html'))
-
     errors = []
     sent = False
     retries = 0
@@ -116,10 +89,38 @@ def send_email():
     while not sent and retries < len(smtp_accounts):
         smtp_user, smtp_password = smtp_accounts[account_index]
         if smtp_user and smtp_password:
+            print(smtp_user)
+            msg = MIMEMultipart()
+            msg['Subject'] = MailTitle
+
+            # HTML 본문을 파싱하여 base64 이미지를 찾아서 첨부
+            soup = BeautifulSoup(MailContent, 'html.parser')
+            cid_count = 0
+
+            for img in soup.find_all('img'):
+                if 'src' in img.attrs and img.attrs['src'].startswith('data:image'):
+                    cid_count += 1
+                    img_type = img.attrs['src'].split(';')[0].split('/')[1]
+                    img_data = re.sub('^data:image/.+;base64,', '', img.attrs['src'])
+                    img_data = base64.b64decode(img_data)
+                    image_name = f'image{cid_count}.{img_type}'
+
+                    # 이미지 MIME 객체 생성 및 첨부
+                    mime_img = MIMEImage(img_data, _subtype=img_type)
+                    mime_img.add_header('Content-Disposition', 'attachment', filename=image_name)
+                    mime_img.add_header('Content-ID', f'<{image_name}>')
+                    msg.attach(mime_img)
+
+                    # HTML 본문 내 이미지 src를 cid로 변경
+                    img.attrs['src'] = f'cid:{image_name}'
+
+            cleaned_html = str(soup)
+            msg.attach(MIMEText(cleaned_html, 'html'))
+
             try:
+
                 msg['From'] = smtp_user
                 msg['To'] = ', '.join(recipient_list)
-
                 server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
                 server.login(smtp_user, smtp_password)
                 server.sendmail(smtp_user, recipient_list, msg.as_string())
@@ -134,9 +135,6 @@ def send_email():
                 retries += 1
 
     if not sent:
-        errors.append("이메일 전송에 실패했습니다.")
-
-    if errors:
         return jsonify({'status': 'error', 'message': error_message}), 500
     else:
         return jsonify({'status': 'success', 'message': '이메일이 성공적으로 전송되었습니다.'})
