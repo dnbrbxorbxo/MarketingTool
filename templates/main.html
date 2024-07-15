@@ -31,6 +31,33 @@
     <!-- Template Main CSS File -->
     <link href="static/css/style.css" rel="stylesheet">
     <script>
+        function setCookie(name, value, days) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days*24*60*60*1000));
+            const expires = "expires="+ d.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        function getCookie(name) {
+            const cname = name + "=";
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const ca = decodedCookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(cname) == 0) {
+                    return c.substring(cname.length, c.length);
+                }
+            }
+            return "";
+        }
+
+
+
+        let SendStatus = true;
+
         function addEmailsToTable(emails) {
             const table = document.getElementById('EmailReceive');
             const tbody = document.createElement('tbody');
@@ -133,7 +160,6 @@
                             console.log(`Batch ${index / batchSize + 1} sent successfully`);
                             index += batchSize;
 
-
                             $("#ResultPanel").append(`
                               <div class="alert alert-success alert-dismissible fade show" role="alert">
                                  총 `+totalEmails+`개의 메일중 `+index+`개의 메일이 발송 되었습니다.
@@ -141,7 +167,9 @@
                               </div>
                             `);
                             removeEmailsFromTable(batchEmails); // 테이블에서 성공한 이메일 제거
-                            sendBatch();
+                            if(SendStatus == true){
+                                sendBatch();
+                            }
                         } else {
                             $("#ResultPanel").append(`
                               <div class="alert alert-danger bg-danger text-light border-0 alert-dismissible fade show" role="alert">
@@ -152,7 +180,6 @@
                         }
                     },
                     error: function (xhr, status, error) {
-
                         $("#ResultPanel").append(`
                           <div class="alert alert-danger bg-danger text-light border-0 alert-dismissible fade show" role="alert">
                              총 `+totalEmails+`개의 메일중 `+index+`개의 메일 발송중 에러가 발생하였습니다.
@@ -210,9 +237,7 @@
         }
 
         $(document).ready(function () {
-
             generateSMTPFields(10);
-
             var MailEditor = new Quill(".quill-editor-full", {
                 modules: {
                     toolbar: [
@@ -229,16 +254,53 @@
                 theme: "snow"
             });
 
+            function saveInputValues() {
+            $('input').each(function() {
+                setCookie(this.id, $(this).val(), 1);
+            });
+            $('select').each(function() {
+                setCookie(this.id, $(this).val(), 1);
+            });
+            setCookie('MailContent', MailEditor.root.innerHTML, 1);
+        }
+
+        function loadInputValues() {
+            $('input').each(function() {
+                const value = getCookie(this.id);
+                if (value) {
+                    $(this).val(value);
+                }
+            });
+            $('select').each(function() {
+                const value = getCookie(this.id);
+                if (value) {
+                    $(this).val(value);
+                }
+            });
+            const mailContent = getCookie('MailContent');
+            if (mailContent) {
+                MailEditor.root.innerHTML = mailContent;
+            }
+        }
+
+        loadInputValues();
+
+
+
             $("#MailClear").on("click", function () {
                 $("input").val("");
                 MailEditor.root.innerHTML = "";
+                saveInputValues();
             });
 
             $('#MailSend').on('click', function (e) {
+                SendStatus = true;
                 const formData = {
                     MailTitle: $('#MailTitle').val(),
                     MailContent: MailEditor.root.innerHTML,
                     MailReceive: [], // This will be populated in batches
+                    SMTP_Type : $("#SMTP_Type").val(),
+                    MailSenderNM : $("#MailSenderNM").val()
                 };
 
                 for (let i = 0; i < 10; i++) {
@@ -248,6 +310,11 @@
 
                 const emails = getEmailsFromTable();
                 sendEmailsInBatches(emails, 100, formData);
+                saveInputValues();
+            });
+
+            $("#MailStop").on("click" , function (e){
+                SendStatus = false;
             });
         });
     </script>
@@ -401,7 +468,19 @@
 
                 <div class="card">
                     <div class="card-body">
+                        <h5 class="card-title">메일 설정</h5>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <select class="form-select" aria-label="Default select example" id = "SMTP_Type">
+                                  <option selected="" value="NAVER">NAVER</option>
+                                  <option value="GOOGLE">GOOGLE</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control" id="MailSenderNM" placeholder="전송하는 사람 이름">
 
+                            </div>
+                        </div>
 
                         <h5 class="card-title">메일 제목</h5>
                         <div class="col-sm-12">
@@ -415,9 +494,13 @@
                         </div>
                         <!-- End Quill Editor Default -->
                         <div class="text-center" style="margin-top: 20px;">
-                            <button type="button" id="MailSend" class="btn btn-primary" style="width: 70%;">메일 전송
+                            <button type="button" id="MailSend" class="btn btn-primary" style="width: 75%;">메일전송
                             </button>
-                            <button type="reset" id="MailClear" class="btn btn-secondary" style="width: 20%;">초기화
+                            <button type="reset" id="MailClear" class="btn btn-secondary" style="width: 24%;">초기화
+                            </button>
+                        </div>
+                        <div class="text-center" style="margin-top: 20px;">
+                            <button type="button" id="MailStop" class="btn btn-danger" style="width: 100%;">일시정지
                             </button>
                         </div>
 

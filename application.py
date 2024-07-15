@@ -1,5 +1,6 @@
 import base64
 import re
+from email.utils import formataddr
 
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
@@ -8,6 +9,8 @@ import smtplib
 from flask import Flask, render_template, request, jsonify
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+
 import logging
 from email.mime.image import MIMEImage
 
@@ -18,10 +21,6 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 # 디버깅을 위한 로그 설정
 logging.basicConfig(level=logging.DEBUG)
-
-# SMTP 설정
-SMTP_SERVER = 'smtp.naver.com'  # SMTP 서버 주소
-SMTP_PORT = 465  # SMTP 포트
 
 @app.route('/')
 def home():
@@ -64,6 +63,17 @@ def send_email():
     MailTitle = data.get('MailTitle')
     MailContent = data.get('MailContent')
     email_list = data.get('MailReceive')
+    SMTP_Type = data.get("SMTP_Type")
+    MailSenderNM = data.get("MailSenderNM")
+
+    if SMTP_Type == "NAVER" :
+        # SMTP 설정
+        SMTP_SERVER = 'smtp.naver.com'  # SMTP 서버 주소
+        SMTP_PORT = 465  # SMTP 포트
+    else:
+        # SMTP 설정
+        SMTP_SERVER = 'smtp.gmail.com'  # SMTP 서버 주소
+        SMTP_PORT = 465  # SMTP 포트
 
     smtp_accounts = [
         (data.get('SMTP_USER0'), data.get('SMTP_PASSWORD0')),
@@ -119,7 +129,8 @@ def send_email():
 
             try:
 
-                msg['From'] = smtp_user
+                msg['From'] = formataddr((Header(MailSenderNM, 'utf-8').encode(), smtp_user))
+
                 msg['To'] = ', '.join(recipient_list)
                 server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
                 server.login(smtp_user, smtp_password)
