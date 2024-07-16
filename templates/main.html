@@ -137,7 +137,7 @@
             return emails;
         }
 
-        function sendEmailsInBatches(emails, batchSize, formData) {
+        function sendEmailsInBatches(emails, batchSize, formData , SmtpCount) {
             const totalEmails = emails.length;
             let index = 0;
 
@@ -149,6 +149,8 @@
 
                 const batchEmails = emails.slice(index, index + batchSize);
                 formData.MailReceive = batchEmails;
+                formData.SmtpNo = index % SmtpCount;
+
 
                 $.ajax({
                     type: 'POST',
@@ -238,7 +240,37 @@
 
         $(document).ready(function () {
             generateSMTPFields(10);
-            var MailEditor = new Quill(".quill-editor-full", {
+            var MailEditor1 = new Quill("#MailContent1", {
+                modules: {
+                    toolbar: [
+                        [{ font: [] }, { size: [] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ color: [] }, { background: [] }],
+                        [{ script: "super" }, { script: "sub" }],
+                        [{ list: "ordered" }, { list: "bullet" }, { indent: "-1" }, { indent: "+1" }],
+                        ["direction", { align: [] }],
+                        ["link"],
+                        ["clean"]
+                    ]
+                },
+                theme: "snow"
+            });
+            var MailEditor2 = new Quill("#MailContent2", {
+                modules: {
+                    toolbar: [
+                        [{ font: [] }, { size: [] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ color: [] }, { background: [] }],
+                        [{ script: "super" }, { script: "sub" }],
+                        [{ list: "ordered" }, { list: "bullet" }, { indent: "-1" }, { indent: "+1" }],
+                        ["direction", { align: [] }],
+                        ["link"],
+                        ["clean"]
+                    ]
+                },
+                theme: "snow"
+            });
+            var MailEditor3 = new Quill("#MailContent3", {
                 modules: {
                     toolbar: [
                         [{ font: [] }, { size: [] }],
@@ -261,7 +293,7 @@
             $('select').each(function() {
                 setCookie(this.id, $(this).val(), 1);
             });
-            setCookie('MailContent', MailEditor.root.innerHTML, 1);
+            //setCookie('MailContent', MailEditor.root.innerHTML, 1);
         }
 
         function loadInputValues() {
@@ -283,13 +315,15 @@
             }
         }
 
-        loadInputValues();
+        //loadInputValues();
 
 
 
             $("#MailClear").on("click", function () {
                 $("input").val("");
-                MailEditor.root.innerHTML = "";
+                MailEditor1.root.innerHTML = "";
+                MailEditor2.root.innerHTML = "";
+                MailEditor3.root.innerHTML = "";
                 saveInputValues();
             });
 
@@ -297,19 +331,25 @@
                 SendStatus = true;
                 const formData = {
                     MailTitle: $('#MailTitle').val(),
-                    MailContent: MailEditor.root.innerHTML,
+                    MailContent1: MailEditor1.root.innerHTML,
+                    MailContent2: MailEditor2.root.innerHTML,
+                    MailContent3: MailEditor3.root.innerHTML,
                     MailReceive: [], // This will be populated in batches
                     SMTP_Type : $("#SMTP_Type").val(),
                     MailSenderNM : $("#MailSenderNM").val()
                 };
 
+                let SmtpCount = 0;
                 for (let i = 0; i < 10; i++) {
-                    formData[`SMTP_USER${i}`] = $(`#SMTP_USER${i}`).val();
-                    formData[`SMTP_PASSWORD${i}`] = $(`#SMTP_PASSWORD${i}`).val();
+                    if($(`#SMTP_USER${i}`).val()){
+                        formData[`SMTP_USER${i}`] = $(`#SMTP_USER${i}`).val();
+                        formData[`SMTP_PASSWORD${i}`] = $(`#SMTP_PASSWORD${i}`).val();
+                        SmtpCount = i;
+                    }
                 }
 
                 const emails = getEmailsFromTable();
-                sendEmailsInBatches(emails, 100, formData);
+                sendEmailsInBatches(emails, 100, formData , SmtpCount);
                 saveInputValues();
             });
 
@@ -489,9 +529,18 @@
                         <h5 class="card-title">메일 내용</h5>
 
                         <!-- Quill Editor Default -->
-                        <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent">
+                        <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent1">
                             <p>메일 내용을 입력해주세요.</p>
                         </div>
+                        <br>
+                        <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent2">
+                            <p>메일 내용을 입력해주세요.</p>
+                        </div>
+                        <br>
+                        <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent3">
+                            <p>메일 내용을 입력해주세요.</p>
+                        </div>
+
                         <!-- End Quill Editor Default -->
                         <div class="text-center" style="margin-top: 20px;">
                             <button type="button" id="MailSend" class="btn btn-primary" style="width: 75%;">메일전송

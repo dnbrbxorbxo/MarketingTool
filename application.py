@@ -1,4 +1,5 @@
 import base64
+import random
 import re
 from email.utils import formataddr
 
@@ -61,10 +62,13 @@ def upload_file():
 def send_email():
     data = request.json
     MailTitle = data.get('MailTitle')
-    MailContent = data.get('MailContent')
     email_list = data.get('MailReceive')
     SMTP_Type = data.get("SMTP_Type")
     MailSenderNM = data.get("MailSenderNM")
+    SmtpNo = data.get("SmtpNo")
+
+    random_number = random.choice([1, 2, 3])
+    MailContent = data.get('MailContent'+str(random_number))
 
     if SMTP_Type == "NAVER" :
         # SMTP 설정
@@ -75,18 +79,18 @@ def send_email():
         SMTP_SERVER = 'smtp.gmail.com'  # SMTP 서버 주소
         SMTP_PORT = 465  # SMTP 포트
 
+    # 유효한 계정만 리스트에 포함
     smtp_accounts = [
-        (data.get('SMTP_USER0'), data.get('SMTP_PASSWORD0')),
-        (data.get('SMTP_USER1'), data.get('SMTP_PASSWORD1')),
-        (data.get('SMTP_USER2'), data.get('SMTP_PASSWORD2')),
-        (data.get('SMTP_USER3'), data.get('SMTP_PASSWORD3')),
-        (data.get('SMTP_USER4'), data.get('SMTP_PASSWORD4')),
-        (data.get('SMTP_USER5'), data.get('SMTP_PASSWORD5')),
-        (data.get('SMTP_USER6'), data.get('SMTP_PASSWORD6')),
-        (data.get('SMTP_USER7'), data.get('SMTP_PASSWORD7')),
-        (data.get('SMTP_USER8'), data.get('SMTP_PASSWORD8')),
-        (data.get('SMTP_USER9'), data.get('SMTP_PASSWORD9')),
+        (data.get(f'SMTP_USER{i}'), data.get(f'SMTP_PASSWORD{i}'))
+        for i in range(10)
+        if data.get(f'SMTP_USER{i}') is not None and data.get(f'SMTP_PASSWORD{i}') is not None
     ]
+
+    if 0 <= SmtpNo < len(smtp_accounts):
+        # 특정 SMTP No의 계정을 맨 앞으로 이동
+        smtp_accounts.insert(0, smtp_accounts.pop(SmtpNo))
+
+    print(smtp_accounts)
 
     # 수신자를 최대 100명까지 가져오기
     recipient_list = email_list[:100]
