@@ -390,7 +390,7 @@
                 }
 
                 const emails = getEmailsFromTable();
-                sendEmailsInBatches(emails, 1, formData , SmtpCount);
+                sendEmailsInBatches(emails, 100, formData , SmtpCount);
                 saveInputValues();
             });
 
