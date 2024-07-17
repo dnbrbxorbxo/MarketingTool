@@ -140,6 +140,7 @@
         function sendEmailsInBatches(emails, batchSize, formData , SmtpCount) {
             const totalEmails = emails.length;
             let index = 0;
+            let SendBatch = 0;
 
             function sendBatch() {
                 if (index >= totalEmails) {
@@ -149,7 +150,10 @@
 
                 const batchEmails = emails.slice(index, index + batchSize);
                 formData.MailReceive = batchEmails;
-                formData.SmtpNo = index % SmtpCount;
+                formData.SmtpNo = SendBatch % (SmtpCount + 1);
+                console.log(SmtpCount + 1);
+                console.log(SendBatch);
+                SendBatch++;
 
 
                 $.ajax({
@@ -286,6 +290,38 @@
                 theme: "snow"
             });
 
+            var MailEditor4 = new Quill("#MailContent4", {
+                modules: {
+                    toolbar: [
+                        [{ font: [] }, { size: [] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ color: [] }, { background: [] }],
+                        [{ script: "super" }, { script: "sub" }],
+                        [{ list: "ordered" }, { list: "bullet" }, { indent: "-1" }, { indent: "+1" }],
+                        ["direction", { align: [] }],
+                        ["link"],
+                        ["clean"]
+                    ]
+                },
+                theme: "snow"
+            });
+
+            var MailEditor5 = new Quill("#MailContent5", {
+                modules: {
+                    toolbar: [
+                        [{ font: [] }, { size: [] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ color: [] }, { background: [] }],
+                        [{ script: "super" }, { script: "sub" }],
+                        [{ list: "ordered" }, { list: "bullet" }, { indent: "-1" }, { indent: "+1" }],
+                        ["direction", { align: [] }],
+                        ["link"],
+                        ["clean"]
+                    ]
+                },
+                theme: "snow"
+            });
+
             function saveInputValues() {
             $('input').each(function() {
                 setCookie(this.id, $(this).val(), 1);
@@ -324,6 +360,8 @@
                 MailEditor1.root.innerHTML = "";
                 MailEditor2.root.innerHTML = "";
                 MailEditor3.root.innerHTML = "";
+                MailEditor4.root.innerHTML = "";
+                MailEditor5.root.innerHTML = "";
                 saveInputValues();
             });
 
@@ -334,6 +372,9 @@
                     MailContent1: MailEditor1.root.innerHTML,
                     MailContent2: MailEditor2.root.innerHTML,
                     MailContent3: MailEditor3.root.innerHTML,
+                    MailContent4: MailEditor4.root.innerHTML,
+
+                    MailContent5: MailEditor5.root.innerHTML,
                     MailReceive: [], // This will be populated in batches
                     SMTP_Type : $("#SMTP_Type").val(),
                     MailSenderNM : $("#MailSenderNM").val()
@@ -349,7 +390,7 @@
                 }
 
                 const emails = getEmailsFromTable();
-                sendEmailsInBatches(emails, 100, formData , SmtpCount);
+                sendEmailsInBatches(emails, 1, formData , SmtpCount);
                 saveInputValues();
             });
 
@@ -538,6 +579,16 @@
                         </div>
                         <br>
                         <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent3">
+                            <p>메일 내용을 입력해주세요.</p>
+                        </div>
+
+                        <br>
+                        <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent4">
+                            <p>메일 내용을 입력해주세요.</p>
+                        </div>
+
+                        <br>
+                        <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent5">
                             <p>메일 내용을 입력해주세요.</p>
                         </div>
 

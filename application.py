@@ -1,6 +1,7 @@
 import base64
 import random
 import re
+import time
 from email.utils import formataddr
 
 import pandas as pd
@@ -67,7 +68,7 @@ def send_email():
     MailSenderNM = data.get("MailSenderNM")
     SmtpNo = data.get("SmtpNo")
 
-    random_number = random.choice([1, 2, 3])
+    random_number = random.choice([1, 2, 3 ,4 , 5])
     MailContent = data.get('MailContent'+str(random_number))
 
     if SMTP_Type == "NAVER" :
@@ -86,7 +87,7 @@ def send_email():
         if data.get(f'SMTP_USER{i}') is not None and data.get(f'SMTP_PASSWORD{i}') is not None
     ]
 
-    if 0 <= SmtpNo < len(smtp_accounts):
+    if 0 <= SmtpNo < len(smtp_accounts) :
         # 특정 SMTP No의 계정을 맨 앞으로 이동
         smtp_accounts.insert(0, smtp_accounts.pop(SmtpNo))
 
@@ -103,6 +104,7 @@ def send_email():
     while not sent and retries < len(smtp_accounts):
         smtp_user, smtp_password = smtp_accounts[account_index]
         if smtp_user and smtp_password:
+            time.sleep(10)
             print(smtp_user)
             msg = MIMEMultipart()
             msg['Subject'] = MailTitle
@@ -136,7 +138,7 @@ def send_email():
                 msg['From'] = formataddr((Header(MailSenderNM, 'utf-8').encode(), smtp_user))
 
                 msg['To'] = ', '.join(recipient_list)
-                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30)
                 server.login(smtp_user, smtp_password)
                 server.sendmail(smtp_user, recipient_list, msg.as_string())
                 server.quit()
