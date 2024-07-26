@@ -368,13 +368,18 @@
             $('#MailSend').on('click', function (e) {
                 SendStatus = true;
                 const formData = {
-                    MailTitle: $('#MailTitle').val(),
+                    MailTitle1: $('#MailTitle1').val(),
+                    MailTitle2: $('#MailTitle2').val(),
+                    MailTitle3: $('#MailTitle3').val(),
+                    MailTitle4: $('#MailTitle4').val(),
+                    MailTitle5: $('#MailTitle5').val(),
+
                     MailContent1: MailEditor1.root.innerHTML,
                     MailContent2: MailEditor2.root.innerHTML,
                     MailContent3: MailEditor3.root.innerHTML,
                     MailContent4: MailEditor4.root.innerHTML,
-
                     MailContent5: MailEditor5.root.innerHTML,
+
                     MailReceive: [], // This will be populated in batches
                     SMTP_Type : $("#SMTP_Type").val(),
                     MailSenderNM : $("#MailSenderNM").val()
@@ -563,30 +568,50 @@
                             </div>
                         </div>
 
-                        <h5 class="card-title">메일 제목</h5>
+                        <h5 class="card-title">메일 제목 1</h5>
                         <div class="col-sm-12">
-                            <input type="text" class="form-control" id="MailTitle">
+                            <input type="text" class="form-control" id="MailTitle1">
                         </div>
-                        <h5 class="card-title">메일 내용</h5>
+                        <br>
 
                         <!-- Quill Editor Default -->
                         <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent1">
                             <p>메일 내용을 입력해주세요.</p>
                         </div>
+
+                        <h5 class="card-title">메일 제목 2</h5>
+                        <div class="col-sm-12">
+                            <input type="text" class="form-control" id="MailTitle2">
+                        </div>
                         <br>
                         <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent2">
                             <p>메일 내용을 입력해주세요.</p>
+                        </div>
+
+                        <h5 class="card-title">메일 제목 3</h5>
+                        <div class="col-sm-12">
+                            <input type="text" class="form-control" id="MailTitle3">
                         </div>
                         <br>
                         <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent3">
                             <p>메일 내용을 입력해주세요.</p>
                         </div>
 
+
+                        <h5 class="card-title">메일 제목 4</h5>
+                        <div class="col-sm-12">
+                            <input type="text" class="form-control" id="MailTitle4">
+                        </div>
                         <br>
                         <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent4">
                             <p>메일 내용을 입력해주세요.</p>
                         </div>
 
+
+                        <h5 class="card-title">메일 제목 5</h5>
+                        <div class="col-sm-12">
+                            <input type="text" class="form-control" id="MailTitle5">
+                        </div>
                         <br>
                         <div class="quill-editor-full ql-container ql-snow" style="height: 500px" id="MailContent5">
                             <p>메일 내용을 입력해주세요.</p>

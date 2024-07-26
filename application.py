@@ -62,14 +62,13 @@ def upload_file():
 @app.route('/send_email', methods=['POST'])
 def send_email():
     data = request.json
-    MailTitle = data.get('MailTitle')
     email_list = data.get('MailReceive')
     SMTP_Type = data.get("SMTP_Type")
     MailSenderNM = data.get("MailSenderNM")
-    SmtpNo = data.get("SmtpNo")
 
     random_number = random.choice([1, 2, 3 ,4 , 5])
     MailContent = data.get('MailContent'+str(random_number))
+    MailTitle = data.get('MailTitle'+str(random_number))
 
     if SMTP_Type == "NAVER" :
         # SMTP 설정
@@ -87,10 +86,6 @@ def send_email():
         if data.get(f'SMTP_USER{i}') is not None and data.get(f'SMTP_PASSWORD{i}') is not None
     ]
 
-    if 0 <= SmtpNo < len(smtp_accounts) :
-        # 특정 SMTP No의 계정을 맨 앞으로 이동
-        smtp_accounts.insert(0, smtp_accounts.pop(SmtpNo))
-
     print(smtp_accounts)
 
     # 수신자를 최대 100명까지 가져오기
@@ -104,7 +99,6 @@ def send_email():
     while not sent and retries < len(smtp_accounts):
         smtp_user, smtp_password = smtp_accounts[account_index]
         if smtp_user and smtp_password:
-            time.sleep(10)
             print(smtp_user)
             msg = MIMEMultipart()
             msg['Subject'] = MailTitle
