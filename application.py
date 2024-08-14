@@ -68,19 +68,33 @@ def upload_file():
             return jsonify({'status': 'error', 'message': str(e)}), 500
     return jsonify({'status': 'error', 'message': 'Invalid file format'}), 400
 
+def parse_proxies():
+    # url = "https://proxylist.geonode.com/api/proxy-list?country=KR&protocols=socks5&limit=500&page=1&sort_by=lastChecked&sort_type=desc"
+    url = "https://proxylist.geonode.com/api/proxy-list?protocols=socks5%2Chttp&limit=500&page=1&sort_by=lastChecked&sort_type=desc"
+    # API 요청
+    response = requests.get(url)
+    data = response.json()
 
+    # 프록시 리스트 생성
+    proxy_list = [
+        (proxy['ip'], proxy['port'], ', '.join(proxy['protocols']))
+        for proxy in data['data']
+    ]
+
+    return proxy_list
 @app.route('/send_email', methods=['POST'])
 def send_email():
+
     data = request.json
     email_list = data.get('MailReceive')
     SMTP_Type = data.get("SMTP_Type")
     MailSenderNM = data.get("MailSenderNM")
 
-    random_number = random.choice([1, 2, 3, 4, 5])
-    MailContent = data.get('MailContent' + str(random_number))
-    MailTitle = data.get('MailTitle' + str(random_number))
+    random_number = random.choice([1, 2, 3 ,4 , 5])
+    MailContent = data.get('MailContent'+str(random_number))
+    MailTitle = data.get('MailTitle'+str(random_number))
 
-    if SMTP_Type == "NAVER":
+    if SMTP_Type == "NAVER" :
         # SMTP 설정
         SMTP_SERVER = 'smtp.naver.com'  # SMTP 서버 주소
         SMTP_PORT = 465  # SMTP 포트
@@ -107,70 +121,59 @@ def send_email():
     account_index = 0
 
     for smtp_index, (smtp_user, smtp_password) in enumerate(smtp_accounts):
-        while retries < 10 and not sent:
-            if smtp_user and smtp_password:
-                logging.debug(f"Using SMTP account: {smtp_user}")
+        if smtp_user and smtp_password:
+            logging.debug(f"Using SMTP account: {smtp_user}")
 
-                msg = MIMEMultipart()
-                msg['Subject'] = MailTitle
+            msg = MIMEMultipart()
+            msg['Subject'] = MailTitle
 
-                # HTML 본문을 파싱하여 base64 이미지를 찾아서 첨부
-                soup = BeautifulSoup(MailContent, 'html.parser')
-                cid_count = 0
+            # HTML 본문을 파싱하여 base64 이미지를 찾아서 첨부
+            soup = BeautifulSoup(MailContent, 'html.parser')
+            cid_count = 0
 
-                for img in soup.find_all('img'):
-                    if 'src' in img.attrs and img.attrs['src'].startswith('data:image'):
-                        cid_count += 1
-                        img_type = img.attrs['src'].split(';')[0].split('/')[1]
-                        img_data = re.sub('^data:image/.+;base64,', '', img.attrs['src'])
-                        img_data = base64.b64decode(img_data)
-                        image_name = f'image{cid_count}.{img_type}'
+            for img in soup.find_all('img'):
+                if 'src' in img.attrs and img.attrs['src'].startswith('data:image'):
+                    cid_count += 1
+                    img_type = img.attrs['src'].split(';')[0].split('/')[1]
+                    img_data = re.sub('^data:image/.+;base64,', '', img.attrs['src'])
+                    img_data = base64.b64decode(img_data)
+                    image_name = f'image{cid_count}.{img_type}'
 
-                        # 이미지 MIME 객체 생성 및 첨부
-                        mime_img = MIMEImage(img_data, _subtype=img_type)
-                        mime_img.add_header('Content-Disposition', 'attachment', filename=image_name)
-                        mime_img.add_header('Content-ID', f'<{image_name}>')
-                        msg.attach(mime_img)
+                    # 이미지 MIME 객체 생성 및 첨부
+                    mime_img = MIMEImage(img_data, _subtype=img_type)
+                    mime_img.add_header('Content-Disposition', 'attachment', filename=image_name)
+                    mime_img.add_header('Content-ID', f'<{image_name}>')
+                    msg.attach(mime_img)
 
-                        # HTML 본문 내 이미지 src를 cid로 변경
-                        img.attrs['src'] = f'cid:{image_name}'
+                    # HTML 본문 내 이미지 src를 cid로 변경
+                    img.attrs['src'] = f'cid:{image_name}'
 
-                cleaned_html = str(soup)
-                msg.attach(MIMEText(cleaned_html, 'html'))
+            cleaned_html = str(soup)
+            msg.attach(MIMEText(cleaned_html, 'html'))
 
-                try:
-                    # 프록시 설정
+            try:
 
-                    # 프록시 설정
-                    socks.setdefaultproxy(
-                        socks.SOCKS5,
-                        "proxy.oculus-proxy.com",
-                        31115,
-                        True,
-                        "ba13396172373555b0b863c3af19140f54480fc8d80f2c828c7fb52b7751ee3d1075bb7f5ac0aae2dcecb5e3bbf5779e",
-                        "oree8kphuc2b"
-                    )
-                    socks.wrapmodule(smtplib)
+                # Set up the proxy with PySocks
 
-                    msg['From'] = formataddr((Header(MailSenderNM, 'utf-8').encode(), smtp_user))
-                    msg['To'] = ', '.join(recipient_list)
+                msg['From'] = formataddr((Header(MailSenderNM, 'utf-8').encode(), smtp_user))
+                msg['To'] = ', '.join(recipient_list)
 
-                    # 이메일 발송 시도
-                    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30)
-                    server.login(smtp_user, smtp_password)
-                    server.sendmail(smtp_user, recipient_list, msg.as_string())
-                    server.quit()
-                    sent = True
-                    break  # 성공적으로 이메일이 발송되면 루프를 종료합니다.
+                # Attempt to send email
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30)
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, recipient_list, msg.as_string())
+                server.quit()
+                sent = True
+                break  # Break proxy loop on successful send
 
-                except Exception as e:
-                    retries += 1
-                    error_message = f"SMTP 계정 {smtp_index + 1}, 시도 {retries}번, 오류 발생: {e}"
-                    logging.error(error_message)
-                    errors.append(error_message)
+            except Exception as e:
+                error_message = f"SMTP 계정 {smtp_index + 1} 오류 발생: {e}"
+                logging.error(error_message)
+                errors.append(error_message)
 
-                    if retries >= 10:
-                        break  # 10번 시도 후 실패 시 루프 종료
+
+            if sent:
+                break  # Break SMTP loop on successful send
 
     if not sent:
         return jsonify({'status': 'error', 'message': error_message}), 500
