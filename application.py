@@ -1,12 +1,7 @@
 import base64
-import random
-import re
-import subprocess
-import time
 from email.utils import formataddr
 
 import pandas as pd
-import socks
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 import os
 import smtplib
@@ -18,7 +13,6 @@ from email.header import Header
 import logging
 from email.mime.image import MIMEImage
 
-from bs4 import BeautifulSoup
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -88,11 +82,6 @@ def send_email():
     data = request.json
     email_list = data.get('MailReceive')
     SMTP_Type = data.get("SMTP_Type")
-    MailSenderNM = data.get("MailSenderNM")
-
-    random_number = random.choice([1, 2, 3 ,4 , 5])
-    MailContent = data.get('MailContent'+str(random_number))
-    MailTitle = data.get('MailTitle'+str(random_number))
 
     if SMTP_Type == "NAVER" :
         # SMTP 설정
@@ -105,7 +94,7 @@ def send_email():
 
     # 유효한 계정만 리스트에 포함
     smtp_accounts = [
-        (data.get(f'SMTP_USER{i}'), data.get(f'SMTP_PASSWORD{i}'))
+        (f"{data.get(f'SMTP_USER{i}')}@naver.com", data.get(f'SMTP_PASSWORD{i}'))
         for i in range(10)
         if data.get(f'SMTP_USER{i}') is not None and data.get(f'SMTP_PASSWORD{i}') is not None
     ]
@@ -122,7 +111,12 @@ def send_email():
 
     for smtp_index, (smtp_user, smtp_password) in enumerate(smtp_accounts):
         if smtp_user and smtp_password:
-            logging.debug(f"Using SMTP account: {smtp_user}")
+
+            MailSenderNM = data.get("MailSenderNM"+ str(smtp_index + 1))
+            MailContent = data.get('MailContent'+ str(smtp_index + 1))
+            MailTitle = data.get('MailTitle' + str(smtp_index + 1))
+
+            logging.debug(f"Using SMTP account: {smtp_user} SenderNM : {MailSenderNM} MailContent : {MailContent} MailTitle : {MailTitle}")
 
             msg = MIMEMultipart()
             msg['Subject'] = MailTitle
